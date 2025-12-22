@@ -22,10 +22,13 @@ RUN apt-get update && apt-get install -y \
 RUN curl -fsSL https://tailscale.com/install.sh | sh
 
 # =========================
-# WORDPRESS HARDENING
+# APACHE MODULES
 # =========================
 RUN a2enmod headers rewrite expires remoteip
 
+# =========================
+# APACHE HARDENING
+# =========================
 RUN { \
     echo "ServerTokens Prod"; \
     echo "ServerSignature Off"; \
@@ -34,7 +37,25 @@ RUN { \
 RUN a2enconf security
 
 # =========================
-# UPLOAD DIRECTORY (VOLUME / EXTERNAL)
+# APACHE DIRECTORY PERMISSION (WAJIB CLOUD RUN)
+# =========================
+RUN echo '<Directory /var/www/html>' \
+    '\n  AllowOverride All' \
+    '\n  Require all granted' \
+    '\n</Directory>' \
+    > /etc/apache2/conf-available/wordpress.conf
+
+RUN a2enconf wordpress
+
+# =========================
+# WORDPRESS PERMISSION FIX
+# =========================
+RUN chown -R www-data:www-data /var/www/html \
+    && find /var/www/html -type d -exec chmod 755 {} \; \
+    && find /var/www/html -type f -exec chmod 644 {} \;
+
+# =========================
+# UPLOAD DIRECTORY (EXTERNAL READY)
 # =========================
 RUN mkdir -p /var/www/html/wp-content/uploads \
     && chown -R www-data:www-data /var/www/html/wp-content

@@ -11,19 +11,28 @@ fi
 
 # Start Tailscale if auth key is provided
 if [ -n "$TAILSCALE_AUTHKEY" ]; then
-    echo "Starting Tailscale daemon..."
-    tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock &
+    echo "Starting Tailscale daemon in userspace networking mode..."
+    
+    # Create state directory
+    mkdir -p /var/lib/tailscale /var/run/tailscale
+    
+    # Start tailscaled in userspace networking mode (no TUN device needed)
+    tailscaled --state=/var/lib/tailscale/tailscaled.state \
+               --socket=/var/run/tailscale/tailscaled.sock \
+               --tun=userspace-networking \
+               --socks5-server=localhost:1055 \
+               --outbound-http-proxy-listen=localhost:1055 &
     
     # Wait for tailscaled to be ready
-    sleep 2
+    sleep 3
     
     # Authenticate with Tailscale
     HOSTNAME="${TAILSCALE_HOSTNAME:-wordpress-$(hostname)}"
     echo "Connecting to Tailscale as $HOSTNAME..."
-    tailscale up --authkey="$TAILSCALE_AUTHKEY" --hostname="$HOSTNAME" --accept-routes --accept-dns=false
+    tailscale up --authkey="$TAILSCALE_AUTHKEY" --hostname="$HOSTNAME" --accept-dns=false
     
     echo "Tailscale connected successfully!"
-    tailscale status
+    tailscale status || true
 fi
 
 # Generate WordPress salts if not provided

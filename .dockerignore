@@ -1,0 +1,51 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Development files
+.env
+.env.local
+*.md
+README*
+LICENSE*
+CHANGELOG*
+
+# IDE and editor files
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files (not needed in image)
+docker-compose*.yml
+docker-compose*.yaml
+
+# Logs
+*.log
+logs/
+
+# WordPress uploads (should be mounted as volume or use cloud storage)
+wp-content/uploads/*
+!wp-content/uploads/.gitkeep
+
+# Cache directories
+wp-content/cache/*
+wp-content/w3tc-config/*
+wp-content/wp-cache-config.php
+
+# Backup files
+*.bak
+*.backup
+*.sql
+*.sql.gz
+
+# Test files
+tests/
+phpunit.xml
+.phpunit.result.cache

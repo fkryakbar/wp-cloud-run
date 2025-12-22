@@ -33,6 +33,26 @@ if [ -n "$TAILSCALE_AUTHKEY" ]; then
     
     echo "Tailscale connected successfully!"
     tailscale status || true
+    
+    # Setup MySQL proxy via Tailscale if DB host is a Tailscale IP (100.x.x.x)
+    if [ -n "$WORDPRESS_DB_HOST" ]; then
+        # Extract host and port
+        DB_HOST_ONLY=$(echo "$WORDPRESS_DB_HOST" | cut -d: -f1)
+        DB_PORT=$(echo "$WORDPRESS_DB_HOST" | grep -o ':[0-9]*' | tr -d ':')
+        DB_PORT=${DB_PORT:-3306}
+        
+        # Check if it's a Tailscale IP (100.x.x.x range)
+        if echo "$DB_HOST_ONLY" | grep -qE '^100\.[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Setting up MySQL proxy for Tailscale IP $DB_HOST_ONLY:$DB_PORT..."
+            
+            # Start socat to proxy MySQL through Tailscale
+            socat TCP-LISTEN:3307,fork,reuseaddr SOCKS4A:localhost:$DB_HOST_ONLY:$DB_PORT,socksport=1055 &
+            
+            # Override WordPress DB host to use local proxy
+            export WORDPRESS_DB_HOST="127.0.0.1:3307"
+            echo "MySQL proxy started on 127.0.0.1:3307 -> $DB_HOST_ONLY:$DB_PORT via Tailscale"
+        fi
+    fi
 fi
 
 # Generate WordPress salts if not provided

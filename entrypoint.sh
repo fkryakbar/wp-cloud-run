@@ -1,9 +1,14 @@
 #!/bin/bash
 set -e
 
-echo "Starting Tailscale..."
+echo "==> Starting container"
 
+# =========================
+# START TAILSCALE (OPTIONAL)
+# =========================
 if [ -n "$TAILSCALE_AUTHKEY" ]; then
+  echo "==> Starting Tailscale"
+
   mkdir -p "$TAILSCALE_STATE_DIR"
 
   tailscaled \
@@ -20,8 +25,11 @@ if [ -n "$TAILSCALE_AUTHKEY" ]; then
     --accept-routes \
     $TAILSCALE_EXTRA_ARGS || true
 else
-  echo "TAILSCALE_AUTHKEY not set, skipping Tailscale"
+  echo "==> Tailscale disabled (no auth key)"
 fi
 
-echo "Starting Apache..."
+# =========================
+# START APACHE
+# =========================
+echo "==> Starting Apache"
 exec apache2-foreground

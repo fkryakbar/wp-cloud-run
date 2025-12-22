@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g-dev \
     unzip \
     curl \
+    iptables \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) \
     gd \
@@ -39,13 +40,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install Tailscale and socat (for TCP proxy)
-RUN curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null \
-    && curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.tailscale-keyring.list | tee /etc/apt/sources.list.d/tailscale.list \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends tailscale socat \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# Copy Tailscale binaries from the tailscale image on Docker Hub
+COPY --from=docker.io/tailscale/tailscale:stable /usr/local/bin/tailscaled /usr/local/bin/tailscaled
+COPY --from=docker.io/tailscale/tailscale:stable /usr/local/bin/tailscale /usr/local/bin/tailscale
+
+# Create Tailscale directories
+RUN mkdir -p /var/run/tailscale /var/cache/tailscale /var/lib/tailscale
 
 # Configure PHP for production
 RUN { \

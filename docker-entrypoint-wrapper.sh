@@ -12,6 +12,13 @@ fi
 # Start Tailscale if auth key is provided
 if [ -n "$TAILSCALE_AUTHKEY" ]; then
     echo "Starting Tailscale daemon in userspace networking mode..."
+
+    # Optimization: explicitly disable MySQL SSL to avoid handshake overhead/errors
+    # Since we are tunneling through Tailscale (WireGuard), the connection is already encrypted.
+    if [[ "$WORDPRESS_CONFIG_EXTRA" != *"MYSQL_CLIENT_FLAGS"* ]]; then
+        export WORDPRESS_CONFIG_EXTRA="${WORDPRESS_CONFIG_EXTRA}
+define( 'MYSQL_CLIENT_FLAGS', 0 );"
+    fi
     
     # Start tailscaled in userspace networking mode (required for Cloud Run)
     /usr/local/bin/tailscaled --tun=userspace-networking --socks5-server=localhost:1055 --state=/var/lib/tailscale/tailscaled.state &

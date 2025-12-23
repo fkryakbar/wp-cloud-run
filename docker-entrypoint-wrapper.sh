@@ -41,7 +41,6 @@ if [ -n "$TAILSCALE_AUTHKEY" ]; then
     echo "Example: WORDPRESS_DB_HOST=your-mysql-server (the Tailscale machine name)"
     echo "Or use: WORDPRESS_DB_HOST=your-mysql-server.tailnet-name.ts.net"
     echo "================="
-    echo "================="
     echo ""
 
     # Configure database tunneling
@@ -73,8 +72,7 @@ if [ -n "$TAILSCALE_AUTHKEY" ]; then
         fi
     fi
 fi
-fi
-
+    
 # Generate WordPress salts if not provided
 if [ -z "$WORDPRESS_AUTH_KEY" ]; then
     export WORDPRESS_AUTH_KEY=$(openssl rand -base64 48)

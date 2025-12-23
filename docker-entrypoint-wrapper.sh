@@ -41,7 +41,38 @@ if [ -n "$TAILSCALE_AUTHKEY" ]; then
     echo "Example: WORDPRESS_DB_HOST=your-mysql-server (the Tailscale machine name)"
     echo "Or use: WORDPRESS_DB_HOST=your-mysql-server.tailnet-name.ts.net"
     echo "================="
+    echo "================="
     echo ""
+
+    # Configure database tunneling
+    if [ -n "$WORDPRESS_DB_HOST" ]; then
+        # Default port to 3306 if not specified
+        DB_HOST=${WORDPRESS_DB_HOST%:*}
+        DB_PORT=${WORDPRESS_DB_HOST#*:}
+        if [ "$DB_HOST" = "$DB_PORT" ]; then
+            DB_PORT=3306
+        fi
+
+        echo "Setting up Tailscale tunnel for database: $DB_HOST:$DB_PORT"
+        
+        # Start socat for database forwarding via SOCKS5
+        # Maps localhost:$DB_PORT -> socat -> SOCKS5(localhost:1055) -> Remote DB
+        # We use a background process
+        socat TCP4-LISTEN:$DB_PORT,fork,bind=127.0.0.1 SOCKS5:127.0.0.1:$DB_HOST:$DB_PORT,socksport=1055 &
+        SOCAT_PID=$!
+        
+        # Give socat a moment to start
+        sleep 1
+        
+        if kill -0 $SOCAT_PID >/dev/null 2>&1; then
+            echo "Database tunnel started successfully on 127.0.0.1:$DB_PORT"
+            # Point WordPress to use the local tunnel
+            export WORDPRESS_DB_HOST="127.0.0.1:$DB_PORT"
+        else
+            echo "WARNING: Failed to start database tunnel via socat"
+        fi
+    fi
+fi
 fi
 
 # Generate WordPress salts if not provided

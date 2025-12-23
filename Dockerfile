@@ -25,6 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     curl \
     iptables \
+    socat \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) \
     gd \

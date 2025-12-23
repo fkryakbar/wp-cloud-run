@@ -54,10 +54,10 @@ if [ -n "$TAILSCALE_AUTHKEY" ]; then
 
         echo "Setting up Tailscale tunnel for database: $DB_HOST:$DB_PORT"
         
-        # Start socat for database forwarding via SOCKS5
-        # Maps localhost:$DB_PORT -> socat -> SOCKS5(localhost:1055) -> Remote DB
-        # We use a background process
-        socat TCP4-LISTEN:$DB_PORT,fork,bind=127.0.0.1 SOCKS5:127.0.0.1:$DB_HOST:$DB_PORT,socksport=1055 &
+        # Start socat for database forwarding using tailscale nc
+        # Maps localhost:$DB_PORT -> socat -> tailscale nc -> Remote DB
+        # This uses Tailscale's native networking which handles MagicDNS correctly
+        socat TCP4-LISTEN:$DB_PORT,fork,bind=127.0.0.1 EXEC:"/usr/local/bin/tailscale nc $DB_HOST $DB_PORT" &
         SOCAT_PID=$!
         
         # Give socat a moment to start
